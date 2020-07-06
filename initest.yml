@@ -1,0 +1,24 @@
+---
+- hosts: jksonar
+  remote_user: jay
+  become: yes
+  tasks:
+    - name: "add file for edit"
+      file:
+        path: /home/jay/smb.conf
+        owner: jay
+        group: jay
+        state: touch
+    - name: "add [global] for samba"
+      ini_file:
+        path: /home/jay/smb.conf
+        section: global
+        option: workgroup
+        value: winserver
+        mode: '0600'
+    - name: "add [home] for samba"
+      ini_file:
+        path: /home/jay/smb.conf
+        section: home
+        option: validuser
+        value: "@jay"
