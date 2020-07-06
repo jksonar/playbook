@@ -1,0 +1,35 @@
+---
+- hosts: all
+  become: yes
+  remote_user: jay
+  vars:
+    pkg:
+      - bash-completion
+      - wget
+      - screen
+      - curl
+      - vim
+      - unzip
+      - epel-release
+      - tree
+    Dpkg:
+      - ntpdate
+      - nmap
+      - tree
+      - screen
+      - wget
+  tasks:
+  #   install packages using yum module
+    - name: yum module packages
+      yum:
+        name: "{{ pkg }}"
+        state: present
+      when: ansible_distribution == "CentOS"
+
+  #    install packages using apt module
+    - name: apt module packages
+      apt:
+        name: "{{ Dpkg }}"
+        state: present
+        cache_valid_time: 3600
+      when: ansible_distribution == "Debian" or ansible_distribution == "ubuntu"
