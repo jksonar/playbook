@@ -1,0 +1,43 @@
+---
+- hosts: jksonar
+  become: yes
+  remote_user: jay 
+  tasks:
+
+    - name: sudor file for centos
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%wheel ALL='
+        line: '%wheel ALL=(ALL:ALL) NOPASSWD: ALL'
+        validate: /usr/sbin/visudo -cf %s
+      when: ansible_distribution == "CentOS"
+
+    - name: sudor file for ubuntu
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo ALL='
+        line: '%sudo ALL=(ALL:ALL) NOPASSWD: ALL'
+        validate: /usr/sbin/visudo -cf %s
+      when: ( ansible_distribution == "Ubuntu" ) or 
+            ( ansible_distribution == "Debian" )
+
+    - name: add jay for ubuntu
+      user:
+        name: jay
+        group: sudo
+      when: ( ansible_distribution == "Ubuntu" ) or 
+            ( ansible_distribution == "Debian" )
+
+    - name: add jay for centos
+      user:
+        name: jay
+        group: wheel
+      when: ansible_distribution == "CentOS"
+
+    - name: add key jay user
+      authorized_key:
+        user: jay
+        state: present
+        key: "{{ lookup('file', '/root/key/jksonar.pub') }}" 

@@ -1,0 +1,8 @@
+---
+- hosts: jksonar
+  become: yes
+  remote_user: jay
+  tasks:
+    - name: ping module
+      ping:
+

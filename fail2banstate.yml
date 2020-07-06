@@ -1,0 +1,8 @@
+---
+- hosts: jksonar
+  become: yes
+  remote_user: jay
+  tasks:
+    - name: display state of fail2ban
+      command: fail2ban-client status sshd
+
