@@ -1,0 +1,53 @@
+---
+- hosts: client2
+  become: yes
+  remote_user: jay
+  vars:
+    mysql_root_password: "We1c0me@2019"
+  tasks:
+    - name: install epel-release packages
+      yum:
+        name:
+          - epel-release
+          - screen
+          - wget
+          - vim
+        state: present
+
+    - name: install Mariadb packages
+      yum:
+        name:
+          - epel-release
+          - mariadb-server
+          - mariadb
+          - MySQL-python
+          - python2-PyMySQL
+        state: present
+
+    - name: start service Mariadb
+      service:
+        name: mariadb
+        enabled: yes
+        state: started
+
+    - name: delete anonymous Mariadb server user for {{ ansible_hostname }}
+      action: mysql_user user="" host="{{ ansible_hostname }}" state="absent"
+
+    - name: delete anonymous Mariadb server user for localhost
+      action: mysql_user user="" state="absent"
+
+    - name: remove the Mariadb test database
+      action: mysql_db db=test state=absent
+
+    - name: Change root user password on first run
+      mysql_user: login_user=root
+                  login_password=''
+                  name=root
+                  password={{ mysql_root_password }}
+                  priv=*.*:ALL,GRANT
+                  host={{ item }}
+      with_items:
+        - "{{ ansible_hostname }}"
+        - 127.0.0.1
+        - ::1
+        - localhost
