@@ -1,0 +1,33 @@
+---
+- hosts: jksonar
+  become: yes
+  remote_user: jay
+  tasks:
+  - name: "List files in /home/ram/"
+    find:
+      path: /home/ram
+      recurse: yes
+      file_type: any
+    register: find_result
+
+  - name: "Create the directories"
+    file:
+      path: "{{ item.path | regex_replace('/home/ram','/home/sam') }}"
+      state: directory
+      mode: "{{ item.mode }}"
+    with_items:
+      - "{{ find_result.files }}"
+    when:
+      - item.isdir
+
+  - name: "Copy the files"
+    copy:
+      src: "{{ item.path }}"
+      dest: "{{ item.path | regex_replace('/home/ram','/home/sam')}}"
+      remote_src: yes
+      mode: "{{ item.mode }}"
+    with_items:
+      - "{{ find_result.files }}"
+    when:
+      - item.isdir == False
+
