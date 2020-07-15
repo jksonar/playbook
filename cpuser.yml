@@ -1,0 +1,14 @@
+---
+- hosts: jksonar
+  become: yes
+  remote_user: jay
+  vars:
+    userData:
+      client1: bob1
+      client2: bob2
+      client3: bob3
+  tasks:
+    - name: " command to cp "
+      command: cp -r /root/ "/home/{{ item.value }}"
+      when: (item.key) in ansible_hostname
+      with_dict: "{{ userData }}" 
