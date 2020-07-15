@@ -30,4 +30,10 @@
       - "{{ find_result.files }}"
     when:
       - item.isdir == False
-
+  - name: "set chown of user"
+    file:
+      path: /home/sam
+      state: directory
+      recurse: yes
+      owner: sam
+      group: sam
