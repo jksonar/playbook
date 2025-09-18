@@ -1,0 +1,131 @@
+# Add yum repo file localrepo.repo to /etc/yum.repos.d/ 
+# Add new entry in Host file
+# Update all packages on host
+# Install apache server 
+# create documentroot for domain
+# Configure new domain 
+# Configure 80 
+# Create self SSL and Use in apache
+# Configure 443 SSL 
+# Add firewalld services 
+---
+- hosts: all
+  gather_facts: false
+  become_user: ec2-user
+  vars:
+    - DomainName: "server.jk.com"
+    - localrepo_file: "localrhel.repo"
+    - repoHost: "repo.jk.com"
+    - repoHost_IP: "192.168.56.120"
+    - template_path: "/root/playbook/apache_setup/templates"
+    - Use_SSL: True # set to true true run ssl tasks 
+    - apache_user: "apache"
+
+  tasks:
+    - name: "ADD YUM LOCALREPO FILE"
+      template:
+        src: "{{ template_path }}/localrhel.j2"
+        dest: "/etc/yum.repos.d/{{ localrepo_file }}"
+        owner: root
+        group: root
+
+    # code is appending new line to /etc/hosts file 
+    # - name: "ADD NEW ENTRY FOR HOSTS FILE"
+    #   lineinfile:
+    #     path: /etc/hosts
+    #     line: "{{ repoHost_IP }}    {{ repoHost }}"
+    #     create: true # Create the file if it doesn't exist
+    #     backup: true # Create a backup of the original file
+
+    - name: "USE NEW HOSTS FILE"
+      template:
+        src: "{{ template_path }}/hosts.j2"
+        dest: "/etc/hosts"
+        owner: root
+        group: root
+        backup: true
+
+    - name: "RUN YUM UPDATE"
+      yum:
+        name: '*'
+        state: latest
+
+    - name: "INSTALL APACHE SERVER"
+      yum:
+        name: "{{ packages  }}"
+        state: present
+        disable_gpg_check: true
+      vars:
+        packages:
+        - httpd
+        - httpd-tools
+        - mod_ssl
+        - openssl
+
+    - name: "CREATE REQUIRED DIRECTORY"
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+        owner: "{{ apache_user }}"
+        group: "{{ apache_user }}"
+      with_items:
+        - "/var/www/html/{{ DomainName }}"
+        - "/etc/httpd/ssl/{{ DomainName }}"
+      
+    - name: "GENERATE SELF-SIGNED SSL FILES FOR 443"
+      command: > 
+        openssl req -x509 -nodes -days 365 
+        -newkey rsa:2048 
+        -keyout /etc/httpd/ssl/{{ DomainName }}/{{ DomainName }}.key 
+        -out /etc/httpd/ssl/{{ DomainName }}/{{ DomainName }}.crt
+        -subj "/C=IN/ST=Maharashtra/L=Mumbai/O=MyCompany/OU=IT/CN={{ DomainName}}/emailAddress=admin@{{ DomainName }}"
+      args:
+        creates: /etc/httpd/ssl/{{ DomainName }}/{{ DomainName }}.crt
+
+    - name: "CREATE VIRTUAL HOST FOR 80"
+      template:
+        src: "{{ template_path }}/vhost80.conf.j2"
+        dest: "/etc/httpd/conf.d/{{ DomainName }}.conf"
+        owner: root
+        group: root
+      when: not Use_SSL | bool
+      notify: "ReStart Apache"
+
+    - name: "CREATE VIRTUAL HOST FOR 443"
+      template:
+        src: "{{ template_path }}/vhost443.conf.j2"
+        dest: "/etc/httpd/conf.d/{{ DomainName }}.conf"
+        owner: root
+        group: root
+      when: Use_SSL | bool
+      notify: "ReStart Apache"
+
+    - name: "COPY INDEX.HTML FILE TO DOCUMENTROOT DIR"
+      copy:
+        src: "{{ template_path }}/index.html.j2"
+        dest: "/var/www/html/{{ DomainName }}"
+        owner: "{{ apache_user }}"
+        group: "{{ apache_user }}"
+
+    - name: "ALLOW HTTP 80 SERVICE AT FIREWALLD"
+      command:
+        cmd: "firewall-cmd --add-service=http --permanent"
+      notify: "ReStart firewalld"
+
+    - name: "ALLOW HTTPS 443 SERVICE AT FIREWALLD"
+      command:
+        cmd: "firewall-cmd --add-service=https --permanent"
+      when: Use_SSL | bool
+      notify: "ReStart firewalld"
+
+  handlers:
+    - name: ReStart Apache
+      service:
+        name: httpd
+        state: restarted
+    
+    - name: ReStart firewalld
+      service:
+        name: firewalld
+        state: restarted

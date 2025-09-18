@@ -1,0 +1,47 @@
+<VirtualHost *:80>
+    RewriteEngine On
+    ServerName {{ DomainName }}
+    RewriteRule ^.*$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,QSA,L]
+
+    DocumentRoot /var/www/html/{{ DomainName }}
+    ErrorLog logs/{{ DomainName }}.err.log
+    CustomLog logs/{{ DomainName }}.log common
+
+    <Directory "/var/www/html/{{ DomainName }}">
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName {{ DomainName }}
+    
+    SSLEngine on
+    SSLCertificateFile      /etc/httpd/ssl/{{ DomainName }}/{{ DomainName }}.crt
+    SSLCertificateKeyFile   /etc/httpd/ssl/{{ DomainName }}/{{ DomainName }}.key
+
+    # enable HTTP/2, if available
+    Protocols h2 http/1.1
+
+    # HTTP Strict Transport Security (mod_headers is required) (63072000 seconds)
+    Header always set Strict-Transport-Security "max-age=63072000"
+    DocumentRoot /var/www/html/{{ DomainName }}
+    ErrorLog logs/{{ DomainName }}.err.log
+    CustomLog logs/{{ DomainName }}.log common
+
+    <Directory "/var/www/html/{{ DomainName }}">
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+</VirtualHost>
+
+# modern configuration
+SSLProtocol             -all +TLSv1.3
+SSLOpenSSLConfCmd       Curves X25519:prime256v1:secp384r1
+SSLHonorCipherOrder     off
+SSLSessionTickets       off
+
+SSLUseStapling On
+SSLStaplingCache "shmcb:logs/ssl_stapling(32768)"

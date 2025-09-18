@@ -1,0 +1,15 @@
+
+<VirtualHost *:80>
+
+ServerName {{ DomainName }}
+
+DocumentRoot /var/www/html/{{ DomainName }}
+ErrorLog logs/{{ DomainName }}.err.log
+CustomLog logs/{{ DomainName }}.log common
+
+<Directory "/var/www/html/{{ DomainName }}">
+AllowOverride None
+Require all granted
+</Directory>
+
+</VirtualHost>
