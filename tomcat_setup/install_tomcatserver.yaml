@@ -1,0 +1,103 @@
+# Add yum repo file localrepo.repo to /etc/yum.repos.d/ 
+# Add new entry in Host file
+# Update all packages on host
+# Download tomcat tar file
+# Install tomcat to /opt/
+# install java 
+# create service file for tomcat and enable start service file
+# allow firewalld service 8080 port 
+---
+- hosts: all
+  gather_facts: false
+  become: True
+  vars:
+    - tomcat_url: "https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.109/bin/apache-tomcat-9.0.109.tar.gz"
+    - tomcat_file_name: "apache-tomcat-9.0.109.tar.gz"
+    - java_package: "java-21-openjdk"
+    - java_home: "/usr/lib/jvm/java-21-openjdk-21.0.4.0.7-1.el9.x86_64"
+    - tomcat_user: "tomcat"
+    - Download_dir: "/usr/src/"
+    - tomcat_home: "/opt/tomcat/"
+    - template_path: "/root/playbook/tomcat_setup/templates"
+    - localrepo_file: "localrhel.repo"
+    - repoHost: "repo.jk.com"
+    - repoHost_IP: "192.168.56.120"
+
+  tasks:
+    - name: "ADD YUM LOCALREPO FILE"
+      template:
+        src: "{{ template_path }}/localrhel.j2"
+        dest: "/etc/yum.repos.d/{{ localrepo_file }}"
+        owner: root
+        group: root
+
+    - name: "USE NEW HOSTS FILE"
+      template:
+        src: "{{ template_path }}/hosts.j2"
+        dest: "/etc/hosts"
+        owner: root
+        group: root
+        backup: true
+
+    - name: "RUN YUM UPDATE"
+      yum:
+        name: '*'
+        state: latest
+
+    - name: "DOWNLOAD TOMCAT TAR FILE"
+      get_url:
+        url: "{{ tomcat_url }}"
+        dest: "{{ Download_dir }}"
+        mode: '0644'
+
+    - name: "ADD USER TOMCAT TO RUNSERVICE"
+      user:
+        name: "{{ tomcat_user }}"
+        home: "{{ tomcat_home }}"
+        create_home: yes
+
+    - name: "CREATE TOMCAT HOME DIRECTOR"
+      file:
+        path: "{{ tomcat_home }}"
+        state: directory
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+
+    - name: "INSTALL JAVA PACKAGE"
+      yum:
+        name: "{{ java_package }}"
+        state: present
+        disable_gpg_check: true
+
+    - name: "INSTALL TOMCAT"
+      unarchive:
+        src: "{{ Download_dir }}{{ tomcat_file_name }}"
+        dest: "{{ tomcat_home }}"
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+        extra_opts:
+          - "--strip-components=1"
+        remote_src: yes
+
+    - name: "COPY TEMPLATE FOR SERVICE FILE"
+      template:
+        src: "{{ template_path }}/tomcat_service.j2"
+        dest: "/etc/systemd/system/tomcat.service"
+      notify: "ReStart Apache Tomcat"
+
+    - name: "ALLOW FIREWALL PORT 8080 FOR TOMCAT"
+      command:
+        cmd: "firewall-cmd --add-port=8080/tcp --permanent"
+      notify: "ReStart firewalld"
+  
+  
+  handlers:
+    - name: ReStart Apache Tomcat
+      service:
+        name: tomcat
+        state: restarted
+
+    - name: ReStart firewalld
+      service:
+        name: firewalld
+        state: restarted

@@ -11,7 +11,7 @@
 ---
 - hosts: all
   gather_facts: false
-  become_user: ec2-user
+  become_user: root
   vars:
     - DomainName: "server.jk.com"
     - localrepo_file: "localrhel.repo"
