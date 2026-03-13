@@ -1,0 +1,51 @@
+---
+- name: Deploy application cron jobs
+  hosts: all
+  become: yes
+  vars:
+    cron_jobs:
+      - name: "Process email queue"
+        minute: "*/2"
+        hour: "*"
+        job: "/opt/myapp/bin/process-emails"
+        user: jay
+      - name: "Generate reports"
+        minute: "0"
+        hour: "6"
+        job: "/opt/myapp/bin/generate-reports"
+        user: jay
+      - name: "Database vacuum"
+        minute: "0"
+        hour: "4"
+        weekday: "0"
+        job: "/opt/myapp/bin/db-vacuum"
+        user: devops
+      - name: "Clean old sessions"
+        minute: "30"
+        hour: "*/6"
+        job: "/opt/myapp/bin/clean-sessions"
+        user: jay
+      - name: "SSL cert renewal check"
+        minute: "0"
+        hour: "12"
+        job: "certbot renew --quiet"
+        user: root
+
+  tasks:
+    - name: Deploy all cron jobs
+      ansible.builtin.cron:
+        name: "{{ item.name }}"
+        minute: "{{ item.minute | default('*') }}"
+        hour: "{{ item.hour | default('*') }}"
+        day: "{{ item.day | default('*') }}"
+        month: "{{ item.month | default('*') }}"
+        weekday: "{{ item.weekday | default('*') }}"
+        job: "{{ item.job }}"
+        user: "{{ item.user | default('root') }}"
+        cron_file: myapp-cron
+      loop: "{{ cron_jobs }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+# This yml will create cron file.
+# cat /etc/cron.d/myapp-cron 

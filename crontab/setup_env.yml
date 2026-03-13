@@ -1,0 +1,33 @@
+---
+- name: Manage cron jobs
+  hosts: all
+  become: yes
+  tasks:
+  - name: Set PATH for cron
+    ansible.builtin.cron:
+      name: PATH
+      env: yes
+      job: "/usr/local/bin:/usr/bin:/bin"
+      user: jay
+
+  - name: Set MAILTO for error notifications
+    ansible.builtin.cron:
+      name: MAILTO
+      env: yes
+      job: "admin@example.com"
+      user: root
+
+  - name: Set custom environment variable
+    ansible.builtin.cron:
+      name: APP_ENV
+      env: yes
+      job: "production"
+      user: jay
+
+  # The actual cron job (uses the environment above)
+  - name: Run application task
+    ansible.builtin.cron:
+      name: "App task"
+      minute: "*/10"
+      job: "/opt/myapp/bin/process-queue"
+      user: jay
