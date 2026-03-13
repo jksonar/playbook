@@ -1,0 +1,31 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: "Install the latest version of Apache and MariaDB"
+      ansible.builtin.package:
+        name:
+          - httpd
+          - mariadb-server
+        state: latest
+
+    # Works on any Linux distribution
+    - name: "Install common packages"
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - vim
+          - git
+        state: present
+
+    - name: "Remove the cockpit-323.1-1.el9_5.x86_64 package"
+      ansible.builtin.package:
+        name: "cockpit-323.1-1.el9_5.x86_64"
+        state: absent
+
+    # Update all packages to latest
+    - name: "Update all packages"
+      ansible.builtin.package:
+        name: '*'
+        state: latest

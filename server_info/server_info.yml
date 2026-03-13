@@ -1,0 +1,29 @@
+- name: Infrastructure provisioning
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Gather system information
+      ansible.builtin.setup:
+        gather_subset:
+          - hardware
+          - network
+
+    - name: Display system summary
+      ansible.builtin.debug:
+        msg: >-
+          Host {{ inventory_hostname }} has
+          {{ ansible_memtotal_mb }}MB RAM,
+          {{ ansible_processor_vcpus }} vCPUs,
+          running {{ ansible_distribution }} {{ ansible_distribution_version }}
+
+    - name: Install required packages
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - zip
+          - tar
+        state: present
