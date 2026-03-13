@@ -1,0 +1,12 @@
+---
+- name: Manage cron jobs
+  hosts: all
+  become: yes
+  tasks:
+    - name: "Run backup script every day at 2 AM"
+      ansible.builtin.cron:
+        name: "Daily backup"
+        minute: "0"
+        hour: "2"
+        job: "/usr/local/bin/backup.sh >> /var/log/backup.log 2>&1"
+        user: devops

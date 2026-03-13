@@ -1,0 +1,53 @@
+---
+- name: Manage cron jobs
+  hosts: all
+  become: yes
+  tasks:
+    # Every 5 minutes
+    - name: Health check every 5 minutes
+      ansible.builtin.cron:
+        name: "Health check"
+        minute: "*/5"
+        job: "/usr/local/bin/health-check.sh"
+
+    # Every hour at minute 30
+    - name: Hourly log rotation
+      ansible.builtin.cron:
+        name: "Log rotation"
+        minute: "30"
+        job: "/usr/local/bin/rotate-logs.sh"
+
+    # Every day at midnight
+    - name: Daily cleanup
+      ansible.builtin.cron:
+        name: "Daily cleanup"
+        minute: "0"
+        hour: "0"
+        job: "/usr/local/bin/cleanup.sh"
+
+    # Every Monday at 6 AM
+    - name: Weekly report
+      ansible.builtin.cron:
+        name: "Weekly report"
+        minute: "0"
+        hour: "6"
+        weekday: "1"
+        job: "/usr/local/bin/weekly-report.sh"
+
+    # First of every month at 3 AM
+    - name: Monthly audit
+      ansible.builtin.cron:
+        name: "Monthly audit"
+        minute: "0"
+        hour: "3"
+        day: "1"
+        job: "/usr/local/bin/audit.sh"
+
+    # Every weekday at 8 AM
+    - name: Weekday notification
+      ansible.builtin.cron:
+        name: "Weekday notification"
+        minute: "0"
+        hour: "8"
+        weekday: "1-5"
+        job: "/usr/local/bin/notify.sh"

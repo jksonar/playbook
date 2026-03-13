@@ -17,6 +17,7 @@
           - wget
           - vim
           - git
+          - python3-pip
         state: present
 
     - name: "Remove the cockpit-323.1-1.el9_5.x86_64 package"

@@ -1,0 +1,13 @@
+# Install posix module
+# ansible-galaxy collection install ansible.posix:1.5.4 -p /home/jay/.ansible/collections --force
+---
+- hosts: all
+  become: true
+  gather_facts: false
+  become_method: sudo
+  become_user: root
+  tasks:
+    - name: "SYNCHRONIZE FILES TO HOST"
+      ansible.posix.synchronize:
+        src: "{{ work_space }}/"
+        dest: "{{ build_loc }}"

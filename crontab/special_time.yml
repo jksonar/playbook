@@ -1,0 +1,22 @@
+---
+- name: Manage cron jobs
+  hosts: all
+  become: yes
+  tasks:
+  - name: Run on every reboot
+    ansible.builtin.cron:
+      name: "Start application on boot"
+      special_time: reboot
+      job: "/opt/myapp/bin/start.sh"
+
+  - name: Run daily
+    ansible.builtin.cron:
+      name: "Daily maintenance"
+      special_time: daily
+      job: "/usr/local/bin/maintenance.sh"
+
+  - name: Run hourly
+    ansible.builtin.cron:
+      name: "Hourly sync"
+      special_time: hourly
+      job: "/usr/local/bin/sync.sh"
